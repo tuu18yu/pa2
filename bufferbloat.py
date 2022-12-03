@@ -200,10 +200,10 @@ def bufferbloat():
     while True:
         # do the measurement (say) 3 times.
         for i in range(3):
-            time_taken = h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP()).communicate()[0]
+            time_taken = h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP(), shell=True).communicate()[0]
             times.append(float(time_taken))
             
-        sleep(1)
+        sleep(5)
         now = time()
         delta = now - start_time
         if delta > args.time:
@@ -213,6 +213,7 @@ def bufferbloat():
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
+    times = map(float, times)
     mean = sum(times)/len(times)
     std = 0
     for t in times:
@@ -220,10 +221,13 @@ def bufferbloat():
     std = std/len(times)
     std = math.sqrt(std)
 
-    f = open("./results.txt", "w+")
-    f.write("average: %s \n" % mean)
-    f.write("stdard deviation: %s \n" % std)
-    f.close()
+    print "average: %s \n" % mean
+    print "stdard deviation: %s \n" % std
+
+    # f = open("./results.txt", "w+")
+    # f.write("average: %s \n" % mean)
+    # f.write("stdard deviation: %s \n" % std)
+    # f.close()
 
     stop_tcpprobe()
     if qmon is not None:
