@@ -1,0 +1,2 @@
+average: 0.669247311828 
+stdard deviation: 0.229336849306 
