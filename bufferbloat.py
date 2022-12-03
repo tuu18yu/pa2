@@ -81,13 +81,9 @@ class BBTopo(Topo):
         switch = self.addSwitch('s0')
 
         # TODO: Add links with appropriate characteristics
-        for i in range(0, n):
-            if i == 0:
-                self.addLink(hosts[i], switch, bw=args.bw_host, delay=args.delay,
-                             max_queue_size=args.maxq)
-            else:
-                self.addLink(hosts[i], switch, bw=args.bw_net, delay=args.delay,
-                             max_queue_size=args.maxq)
+        delay = str(args.delay) + "ms"
+        self.addLink(hosts[0], switch, bw=args.bw_host, delay=args.delay, max_queue_size=args.maxq)
+        self.addLink(hosts[1], switch, bw=args.bw_net, delay=args.delay, max_queue_size=args.maxq)
     
 
 
@@ -120,9 +116,8 @@ def start_iperf(net):
     server = h2.popen("iperf -s -w 16m")
     # TODO: Start the iperf client on h1.  Ensure that you create a
     # long lived TCP flow. You may need to redirect iperf's stdout to avoid blocking.
-
     h1 = net.get('h1')
-    h1.popen("iperf -c %s -t %s > %s/iperf.out" % (h2.IP(), args.time, args.dir), shell=True)
+    h1.popen("iperf -c %s -t %s > %s/iperf_out.txt" % (h2.IP(), args.time, args.dir), shell=True)
 
 def start_webserver(net):
     h1 = net.get('h1')
@@ -144,6 +139,7 @@ def start_ping(net):
     h1 = net.get('h1')
     h2 = net.get('h2')
     popen = h1.popen("ping -i 0.1 %s > %s/ping.txt"%(h2.IP(), args.dir), shell=True)
+    
 
 def bufferbloat():
     if not os.path.exists(args.dir):
@@ -196,11 +192,17 @@ def bufferbloat():
     # spawned on host h1 (not from google!)
     # Hint: have a separate function to do this and you may find the
     # loop below useful.
-    start_time = time()
-
     times = []
+    h1 = net.get('h1')
+    h2 = net.get('h2')
+
+    start_time = time()
     while True:
         # do the measurement (say) 3 times.
+        for i in range(3):
+            time_taken = h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP()).communicate()[0]
+            times.append(float(time_taken))
+            
         sleep(1)
         now = time()
         delta = now - start_time
@@ -208,17 +210,20 @@ def bufferbloat():
             break
         print "%.1fs left..." % (args.time - delta)
 
-        h1 = net.get('h1')
-        h2 = net.get('h2')
-        for i in range(3):
-            webpage_time = h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' %
-                    h1.IP()).communicate()[0]
-            times.append(float(webpage_time))
-        sleep(5)
-
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
+    mean = sum(times)/len(times)
+    std = 0
+    for t in times:
+        std += (t - mean) ** 2
+    std = std/len(times)
+    std = math.sqrt(std)
+
+    f = open("./results.txt", "w+")
+    f.write("average: %s \n" % mean)
+    f.write("stdard deviation: %s \n" % std)
+    f.close()
 
     stop_tcpprobe()
     if qmon is not None:
