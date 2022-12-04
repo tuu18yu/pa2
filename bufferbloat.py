@@ -221,8 +221,8 @@ def bufferbloat():
     std = std/len(times)
     std = math.sqrt(std)
 
-    print "average: %s \n" % mean
-    print "stdard deviation: %s \n" % std
+    print "average: %s" % mean
+    print "stdard deviation: %s" % std
 
     # f = open("./results.txt", "w+")
     # f.write("average: %s \n" % mean)
